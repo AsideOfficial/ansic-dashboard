@@ -20,10 +20,10 @@ const pageTitles: Record<string, string> = {
 
 const Topbar: React.FC<TopbarProps> = ({ activeTab, onTabChange, activePage }) => {
   return (
-    <header className="topbar">
-      <div className="topbar-title">{pageTitles[activePage] || ''}</div>
+    <header className="topbar" style={{ display: 'flex', alignItems: 'center', gap: 32, padding: '0 40px', borderBottom: '1px solid #e0e6ef', minHeight: 68, background: '#fff' }}>
+      <div className="topbar-title" style={{ fontSize: '1.35rem', fontWeight: 700, color: '#222', letterSpacing: 0.5, whiteSpace: 'nowrap' }}>{pageTitles[activePage] || ''}</div>
       {activePage === 'dashboard' && (
-        <nav style={{ display: 'flex', gap: 24, justifyContent: 'flex-start' }}>
+        <nav style={{ display: 'flex', gap: 24 }}>
           {tabList.map(tab => (
             <button
               key={tab.key}
