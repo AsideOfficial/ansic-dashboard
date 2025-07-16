@@ -119,6 +119,24 @@ const Dashboard: React.FC = () => {
   const 채널유입 = channelFields.map(f => ({ label: f.label, value: sumPerson(f.key) }));
   const 채널유입합 = 채널유입.reduce((sum, d) => sum + d.value, 0);
 
+  // 상품 집계
+  const productFields = [
+    { key: '커피판매수', label: '커피', 매출: '커피매출' },
+    { key: 'Tea판매수', label: '티', 매출: 'Tea매출' },
+    { key: '논알콜맥주판매수', label: '논알콜맥주', 매출: '논알콜맥주매출' },
+    { key: '주스에이드판매수', label: '주스/에이드', 매출: '주스에이드매출' },
+  ];
+  // 최근 기간 데이터(상품)
+  const latestProduct = grouped.length > 0 ? grouped[grouped.length - 1].rows : [];
+  const sumProduct = (key: string) => latestProduct.reduce((sum, row) => sum + parseInt(row[key] as string || '0', 10), 0);
+  const productData = productFields.map(f => ({
+    label: f.label,
+    판매수: sumProduct(f.key),
+    매출: sumProduct(f.매출)
+  }));
+  // 판매수 기준 내림차순 정렬
+  const productRank = [...productData].sort((a, b) => b.판매수 - a.판매수);
+
   return (
     <div className="dashboard" style={{ display: 'flex', flexDirection: 'column', gap: 40 }}>
       {/* 날짜/기간 필터 */}
@@ -207,10 +225,29 @@ const Dashboard: React.FC = () => {
         <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 18 }}>C. 상품 수</h2>
         <div style={{ display: 'flex', gap: 24, marginBottom: 24 }}>
           <div style={{ flex: 2, background: '#fff', borderRadius: 12, minHeight: 180, boxShadow: '0 2px 12px rgba(30,34,40,0.06)', padding: 18 }}>
-            상품별 판매 순위 BarChart
+            <b>상품별 판매 순위</b>
+            <BarChartProduct data={productRank.map(p => p.판매수)} labels={productRank.map(p => p.label)} />
           </div>
           <div style={{ flex: 3, background: '#fff', borderRadius: 12, minHeight: 180, boxShadow: '0 2px 12px rgba(30,34,40,0.06)', padding: 18 }}>
-            상품별 판매량/매출 표
+            <b>상품별 판매량/매출</b>
+            <table style={{ width: '100%', marginTop: 12, fontSize: 15 }}>
+              <thead>
+                <tr style={{ color: '#7b8aaf', fontWeight: 700 }}>
+                  <th>상품</th>
+                  <th>판매수</th>
+                  <th>매출</th>
+                </tr>
+              </thead>
+              <tbody>
+                {productRank.map(p => (
+                  <tr key={p.label}>
+                    <td>{p.label}</td>
+                    <td>{p.판매수.toLocaleString()}개</td>
+                    <td>{p.매출.toLocaleString()}원</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </section>
@@ -309,5 +346,25 @@ const PieChart: React.FC<{ data: { label: string; value: number }[] }> = ({ data
     </svg>
   );
 };
+
+// 상품 BarChart
+const BarChartProduct: React.FC<{ data: number[]; labels: string[] }> = ({ data, labels }) => (
+  <svg width="100%" height="120" viewBox={`0 0 ${Math.max(320, data.length * 60)} 120`}>
+    {data.map((v, i) => (
+      <rect
+        key={i}
+        x={i * 60 + 40}
+        y={120 - v / 2}
+        width={36}
+        height={v / 2}
+        fill={colors[i % colors.length]}
+        rx={7}
+      />
+    ))}
+    {labels.map((label, i) => (
+      <text key={label} x={i * 60 + 58} y={115} fontSize={13} textAnchor="middle" fill="#7b8aaf">{label}</text>
+    ))}
+  </svg>
+);
 
 export default Dashboard; 
