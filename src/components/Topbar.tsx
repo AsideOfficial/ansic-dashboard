@@ -15,7 +15,7 @@ const Topbar: React.FC<TopbarProps> = ({ activeTab, onTabChange }) => {
   return (
     <header className="topbar">
       <div className="topbar-title">{tabList.find(t => t.key === activeTab)?.label || ''} 대시보드</div>
-      <nav style={{ display: 'flex', gap: 24 }}>
+      <nav style={{ display: 'flex', gap: 24, justifyContent: 'flex-start' }}>
         {tabList.map(tab => (
           <button
             key={tab.key}

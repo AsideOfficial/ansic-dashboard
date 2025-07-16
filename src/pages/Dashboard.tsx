@@ -211,30 +211,6 @@ const Dashboard: React.FC<DashboardProps> = ({ activeTab, onTabChange }) => {
 
   return (
     <div className="dashboard" style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 0' }}>
-      {/* 상단 탭 (App에서 상태 관리) */}
-      <div style={{ display: 'flex', gap: 12, marginBottom: 32, justifyContent: 'center' }}>
-        {TABS.map(tab => (
-          <button
-            key={tab.key}
-            onClick={() => onTabChange(tab.key as any)}
-            style={{
-              padding: '12px 36px',
-              borderRadius: 8,
-              border: 'none',
-              background: activeTab === tab.key ? '#2d8cff' : '#f4f8ff',
-              color: activeTab === tab.key ? '#fff' : '#2d8cff',
-              fontWeight: 700,
-              fontSize: 18,
-              cursor: 'pointer',
-              boxShadow: activeTab === tab.key ? '0 2px 8px rgba(45,140,255,0.08)' : 'none',
-              transition: 'all 0.2s',
-            }}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
       {/* 탭별 컨텐츠 */}
       {activeTab === 'sales' && (
         <section>
