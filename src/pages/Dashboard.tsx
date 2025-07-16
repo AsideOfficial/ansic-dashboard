@@ -96,9 +96,6 @@ const Dashboard: React.FC = () => {
   const latest = totalSalesByPeriod.length > 0 ? totalSalesByPeriod[totalSalesByPeriod.length - 1] : null;
 
   // 목표/순이익 등은 임시(추후 로직 추가)
-  const 목표 = 10000000; // 예시 목표
-  const 순이익 = latest ? Math.round((latest.total as number) * 0.25) : 0; // 예시: 25% 마진
-  const 미달성 = latest ? Math.max(0, 목표 - (latest.total as number)) : 0;
 
   // 인원 집계
   const personFields = [
@@ -137,6 +134,71 @@ const Dashboard: React.FC = () => {
   // 판매수 기준 내림차순 정렬
   const productRank = [...productData].sort((a, b) => b.판매수 - a.판매수);
 
+  // 순이익 LineChart
+  const LineChartProfit: React.FC<{ data: number[]; labels: string[] }> = ({ data, labels }) => {
+    const max = Math.max(...data, 1);
+    const points = data.map((v, i) => `${i * 40 + 42},${120 - (v / max) * 100}`).join(' ');
+    return (
+      <svg width="100%" height="120" viewBox={`0 0 ${Math.max(320, data.length * 40)} 120`}>
+        <polyline
+          fill="none"
+          stroke="#00b894"
+          strokeWidth={3}
+          points={points}
+        />
+        {data.map((v, i) => (
+          <circle
+            key={i}
+            cx={i * 40 + 42}
+            cy={120 - (v / max) * 100}
+            r={4}
+            fill="#00b894"
+          />
+        ))}
+        {labels.map((label, i) => (
+          <text key={label} x={i * 40 + 42} y={115} fontSize={11} textAnchor="middle" fill="#7b8aaf">{label}</text>
+        ))}
+      </svg>
+    );
+  };
+  // 매출 세부 항목 필드(요구사항 기준)
+  const salesFieldsFull = [
+    { key: '예약매출', label: '예약 매출' },
+    { key: '워크인매출', label: '워크인 매출' },
+    { key: '환자식사매출', label: '환자 식사 매출' },
+    { key: '직원식사매출', label: '직원 식사 매출' },
+    { key: '배달매출전', label: '배달 매출' },
+    { key: '계좌이체', label: '계좌이체' },
+    { key: '음료테이크아웃매출', label: '테이크아웃 음료 매출' },
+    { key: '네이버QR주문금액', label: '네이버 QR 주문 매출' },
+    { key: '푸드콘사용금액', label: '푸드콘 매출' },
+  ];
+  // 총 매출 = 위 항목 합산
+  const groupedFull = groupByPeriod(employeeInputs, period);
+  const totalSalesByPeriodFull: TotalSalesByPeriod[] = groupedFull.map(g => ({
+    period: g.period,
+    total: sumFields(
+      g.rows.reduce((acc: { [key: string]: number }, cur: SalesRow) => {
+        salesFieldsFull.forEach(f => {
+          acc[f.key] = (acc[f.key] || 0) + parseInt(cur[f.key] as string || '0', 10);
+        });
+        return acc;
+      }, {}),
+      salesFieldsFull.map(f => f.key)
+    ),
+    ...salesFieldsFull.reduce((acc: { [key: string]: number }, f) => {
+      acc[f.key] = g.rows.reduce((sum: number, row: SalesRow) => sum + parseInt(row[f.key] as string || '0', 10), 0);
+      return acc;
+    }, {})
+  }));
+  // 최근 기간 데이터
+  const latestFull = totalSalesByPeriodFull.length > 0 ? totalSalesByPeriodFull[totalSalesByPeriodFull.length - 1] : null;
+  // 순이익(예시: 25% 마진)
+  const 순이익Arr = totalSalesByPeriodFull.map(d => Math.round((d.total as number) * 0.25));
+  const 순이익 = latestFull ? Math.round((latestFull.total as number) * 0.25) : 0;
+  // 목표/미달성
+  const 목표 = 10000000; // 예시 목표
+
   return (
     <div className="dashboard" style={{ display: 'flex', flexDirection: 'column', gap: 40 }}>
       {/* 날짜/기간 필터 */}
@@ -153,45 +215,53 @@ const Dashboard: React.FC = () => {
       {/* A) 매출 */}
       <section>
         <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 18 }}>A. 매출</h2>
-        <div style={{ display: 'flex', gap: 18, marginBottom: 24 }}>
-          <div className="summary-card">총 매출<br /><b>{latest ? (latest.total as number).toLocaleString() + '원' : '-'}</b></div>
-          <div className="summary-card">순이익<br /><b>{latest ? 순이익.toLocaleString() + '원' : '-'}</b></div>
-          <div className="summary-card">매출 목표/달성률<br /><b>{목표.toLocaleString()}원 / {latest ? (((latest.total as number) / 목표) * 100).toFixed(1) : '-'}%</b></div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 18, marginBottom: 24 }}>
+          <div className="summary-card">총 매출<br /><b>{latestFull ? (latestFull.total as number).toLocaleString() + '원' : '-'}</b></div>
+          {salesFieldsFull.map(f => (
+            <div className="summary-card" key={f.key}>{f.label}<br /><b>{latestFull ? (latestFull[f.key] as number).toLocaleString() + '원' : '-'}</b></div>
+          ))}
+          <div className="summary-card">순이익<br /><b>{latestFull ? 순이익.toLocaleString() + '원' : '-'}</b></div>
+          <div className="summary-card">매출 목표/달성률<br /><b>{목표.toLocaleString()}원 / {latestFull ? (((latestFull.total as number) / 목표) * 100).toFixed(1) : '-'}%</b></div>
+          <div className="summary-card">미달성<br /><b>{latestFull ? Math.max(0, 목표 - (latestFull.total as number)).toLocaleString() + '원' : '-'}</b></div>
         </div>
         <div style={{ display: 'flex', gap: 24, marginBottom: 24 }}>
-          {/* 총 매출 BarChart */}
           <div style={{ flex: 2, background: '#fff', borderRadius: 12, minHeight: 180, boxShadow: '0 2px 12px rgba(30,34,40,0.06)', padding: 18 }}>
             <b>총 매출</b>
-            <BarChartCustom data={totalSalesByPeriod.map(d => d.total as number)} labels={totalSalesByPeriod.map(d => d.period)} />
+            <BarChartCustom data={totalSalesByPeriodFull.map(d => d.total as number)} labels={totalSalesByPeriodFull.map(d => d.period)} />
           </div>
-          {/* 매출 세부 항목 StackedBarChart */}
           <div style={{ flex: 3, background: '#fff', borderRadius: 12, minHeight: 180, boxShadow: '0 2px 12px rgba(30,34,40,0.06)', padding: 18 }}>
             <b>매출 세부 항목</b>
-            <StackedBarChart data={totalSalesByPeriod} fields={salesFields} />
+            <StackedBarChart data={totalSalesByPeriodFull} fields={salesFieldsFull} />
           </div>
         </div>
-        <div style={{ background: '#fff', borderRadius: 12, minHeight: 120, boxShadow: '0 2px 12px rgba(30,34,40,0.06)', padding: 18 }}>
-          <b>매출 목표/실적/미달성</b>
-          <table style={{ width: '100%', marginTop: 12, fontSize: 15 }}>
-            <thead>
-              <tr style={{ color: '#7b8aaf', fontWeight: 700 }}>
-                <th>기간</th>
-                <th>실적</th>
-                <th>목표</th>
-                <th>미달성</th>
-              </tr>
-            </thead>
-            <tbody>
-              {totalSalesByPeriod.map(d => (
-                <tr key={d.period}>
-                  <td>{d.period}</td>
-                  <td>{(d.total as number).toLocaleString()}원</td>
-                  <td>{목표.toLocaleString()}원</td>
-                  <td>{Math.max(0, 목표 - (d.total as number)).toLocaleString()}원</td>
+        <div style={{ display: 'flex', gap: 24, marginBottom: 24 }}>
+          <div style={{ flex: 2, background: '#fff', borderRadius: 12, minHeight: 180, boxShadow: '0 2px 12px rgba(30,34,40,0.06)', padding: 18 }}>
+            <b>순이익</b>
+            <LineChartProfit data={순이익Arr} labels={totalSalesByPeriodFull.map(d => d.period)} />
+          </div>
+          <div style={{ flex: 3, background: '#fff', borderRadius: 12, minHeight: 180, boxShadow: '0 2px 12px rgba(30,34,40,0.06)', padding: 18 }}>
+            <b>매출 목표/실적/미달성</b>
+            <table style={{ width: '100%', marginTop: 12, fontSize: 15 }}>
+              <thead>
+                <tr style={{ color: '#7b8aaf', fontWeight: 700 }}>
+                  <th>기간</th>
+                  <th>실적</th>
+                  <th>목표</th>
+                  <th>미달성</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {totalSalesByPeriodFull.map(d => (
+                  <tr key={d.period}>
+                    <td>{d.period}</td>
+                    <td>{(d.total as number).toLocaleString()}원</td>
+                    <td>{목표.toLocaleString()}원</td>
+                    <td>{Math.max(0, 목표 - (d.total as number)).toLocaleString()}원</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
 
