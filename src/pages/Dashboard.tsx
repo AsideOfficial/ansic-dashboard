@@ -31,11 +31,18 @@ function sumFields(data: { [key: string]: any }, keys: string[]): number {
   return keys.reduce((sum: number, key: string) => sum + (parseInt(data[key] || '0', 10)), 0);
 }
 
+const TABS = [
+  { key: 'sales', label: '매출' },
+  { key: 'person', label: '인원' },
+  { key: 'product', label: '상품 수' },
+];
+
 const Dashboard: React.FC = () => {
   // 기간 필터 상태
   const [period, setPeriod] = useState<'year' | 'month' | 'week' | 'day'>('month');
   const [employeeInputs, setEmployeeInputs] = useState<SalesRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'sales' | 'person' | 'product'>('sales');
 
   // 데이터 fetch
   useEffect(() => {
@@ -200,127 +207,148 @@ const Dashboard: React.FC = () => {
   const 목표 = 10000000; // 예시 목표
 
   return (
-    <div className="dashboard" style={{ display: 'flex', flexDirection: 'column', gap: 40 }}>
-      {/* 날짜/기간 필터 */}
-      <section style={{ marginBottom: 24 }}>
-        <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 12 }}>기간 선택</h2>
-        <select value={period} onChange={e => setPeriod(e.target.value as any)} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid #e0e6ef', fontWeight: 500 }}>
-          <option value="year">연도별</option>
-          <option value="month">월별</option>
-          <option value="week">주별</option>
-          <option value="day">일별</option>
-        </select>
-      </section>
+    <div className="dashboard" style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 0' }}>
+      {/* 상단 탭 */}
+      <div style={{ display: 'flex', gap: 12, marginBottom: 32, justifyContent: 'center' }}>
+        {TABS.map(tab => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key as any)}
+            style={{
+              padding: '12px 36px',
+              borderRadius: 8,
+              border: 'none',
+              background: activeTab === tab.key ? '#2d8cff' : '#f4f8ff',
+              color: activeTab === tab.key ? '#fff' : '#2d8cff',
+              fontWeight: 700,
+              fontSize: 18,
+              cursor: 'pointer',
+              boxShadow: activeTab === tab.key ? '0 2px 8px rgba(45,140,255,0.08)' : 'none',
+              transition: 'all 0.2s',
+            }}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
-      {/* A) 매출 */}
-      <section>
-        <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 18, color: '#2d8cff', letterSpacing: 0.5 }}>매출 현황 및 분석</h2>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 18, marginBottom: 24 }}>
-          <div className="summary-card">총 매출<br /><b>{latestFull ? (latestFull.total as number).toLocaleString() + '원' : '-'}</b></div>
-          {salesFieldsFull.map(f => (
-            <div className="summary-card" key={f.key}>{f.label}<br /><b>{latestFull ? (latestFull[f.key] as number).toLocaleString() + '원' : '-'}</b></div>
-          ))}
-          <div className="summary-card">순이익<br /><b>{latestFull ? 순이익.toLocaleString() + '원' : '-'}</b></div>
-          <div className="summary-card">매출 목표/달성률<br /><b>{목표.toLocaleString()}원 / {latestFull ? (((latestFull.total as number) / 목표) * 100).toFixed(1) : '-'}%</b></div>
-          <div className="summary-card">미달성<br /><b>{latestFull ? Math.max(0, 목표 - (latestFull.total as number)).toLocaleString() + '원' : '-'}</b></div>
-        </div>
-        <div style={{ display: 'flex', gap: 24, marginBottom: 24 }}>
-          <div style={{ flex: 2, background: '#fff', borderRadius: 12, minHeight: 180, boxShadow: '0 2px 12px rgba(30,34,40,0.06)', padding: 18 }}>
-            <b>총 매출</b>
-            <BarChartCustom data={totalSalesByPeriodFull.map(d => d.total as number)} labels={totalSalesByPeriodFull.map(d => d.period)} />
+      {/* 탭별 컨텐츠 */}
+      {activeTab === 'sales' && (
+        <section>
+          <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 18, color: '#2d8cff', letterSpacing: 0.5 }}>매출 현황 및 분석</h2>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 18, marginBottom: 24 }}>
+            <div className="summary-card">총 매출<br /><b>{latestFull ? (latestFull.total as number).toLocaleString() + '원' : '-'}</b></div>
+            {salesFieldsFull.map(f => (
+              <div className="summary-card" key={f.key}>{f.label}<br /><b>{latestFull ? (latestFull[f.key] as number).toLocaleString() + '원' : '-'}</b></div>
+            ))}
+            <div className="summary-card">순이익<br /><b>{latestFull ? 순이익.toLocaleString() + '원' : '-'}</b></div>
+            <div className="summary-card">매출 목표/달성률<br /><b>{목표.toLocaleString()}원 / {latestFull ? (((latestFull.total as number) / 목표) * 100).toFixed(1) : '-'}%</b></div>
+            <div className="summary-card">미달성<br /><b>{latestFull ? Math.max(0, 목표 - (latestFull.total as number)).toLocaleString() + '원' : '-'}</b></div>
           </div>
-          <div style={{ flex: 3, background: '#fff', borderRadius: 12, minHeight: 180, boxShadow: '0 2px 12px rgba(30,34,40,0.06)', padding: 18 }}>
-            <b>매출 세부 항목</b>
-            <StackedBarChart data={totalSalesByPeriodFull} fields={salesFieldsFull} />
+          <div style={{ display: 'flex', gap: 24, marginBottom: 24 }}>
+            <div style={{ flex: 2, background: '#fff', borderRadius: 12, minHeight: 180, boxShadow: '0 2px 12px rgba(30,34,40,0.06)', padding: 18 }}>
+              <b>총 매출</b>
+              <BarChartCustom data={totalSalesByPeriodFull.map(d => d.total as number)} labels={totalSalesByPeriodFull.map(d => d.period)} />
+            </div>
+            <div style={{ flex: 3, background: '#fff', borderRadius: 12, minHeight: 180, boxShadow: '0 2px 12px rgba(30,34,40,0.06)', padding: 18 }}>
+              <b>매출 세부 항목</b>
+              <StackedBarChart data={totalSalesByPeriodFull} fields={salesFieldsFull} />
+            </div>
           </div>
-        </div>
-        <div style={{ display: 'flex', gap: 24, marginBottom: 24 }}>
-          <div style={{ flex: 2, background: '#fff', borderRadius: 12, minHeight: 180, boxShadow: '0 2px 12px rgba(30,34,40,0.06)', padding: 18 }}>
-            <b>순이익</b>
-            <LineChartProfit data={순이익Arr} labels={totalSalesByPeriodFull.map(d => d.period)} />
-          </div>
-          <div style={{ flex: 3, background: '#fff', borderRadius: 12, minHeight: 180, boxShadow: '0 2px 12px rgba(30,34,40,0.06)', padding: 18 }}>
-            <b>매출 목표/실적/미달성</b>
-            <table style={{ width: '100%', marginTop: 12, fontSize: 15 }}>
-              <thead>
-                <tr style={{ color: '#7b8aaf', fontWeight: 700 }}>
-                  <th>기간</th>
-                  <th>실적</th>
-                  <th>목표</th>
-                  <th>미달성</th>
-                </tr>
-              </thead>
-              <tbody>
-                {totalSalesByPeriodFull.map(d => (
-                  <tr key={d.period}>
-                    <td>{d.period}</td>
-                    <td>{(d.total as number).toLocaleString()}원</td>
-                    <td>{목표.toLocaleString()}원</td>
-                    <td>{Math.max(0, 목표 - (d.total as number)).toLocaleString()}원</td>
+          <div style={{ display: 'flex', gap: 24 }}>
+            <div style={{ flex: 2, background: '#fff', borderRadius: 12, minHeight: 180, boxShadow: '0 2px 12px rgba(30,34,40,0.06)', padding: 18 }}>
+              <b>순이익</b>
+              <LineChartProfit data={순이익Arr} labels={totalSalesByPeriodFull.map(d => d.period)} />
+            </div>
+            <div style={{ flex: 3, background: '#fff', borderRadius: 12, minHeight: 180, boxShadow: '0 2px 12px rgba(30,34,40,0.06)', padding: 18 }}>
+              <b>매출 목표/실적/미달성</b>
+              <table style={{ width: '100%', marginTop: 12, fontSize: 15 }}>
+                <thead>
+                  <tr style={{ color: '#7b8aaf', fontWeight: 700 }}>
+                    <th>기간</th>
+                    <th>실적</th>
+                    <th>목표</th>
+                    <th>미달성</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {totalSalesByPeriodFull.map(d => (
+                    <tr key={d.period}>
+                      <td>{d.period}</td>
+                      <td>{(d.total as number).toLocaleString()}원</td>
+                      <td>{목표.toLocaleString()}원</td>
+                      <td>{Math.max(0, 목표 - (d.total as number)).toLocaleString()}원</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
-      </section>
-
-      {/* B) 인원 */}
-      <section>
-        <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 18 }}>B. 인원</h2>
-        <div style={{ display: 'flex', gap: 18, marginBottom: 24 }}>
-          <div className="summary-card">예약 인원<br /><b>{예약인원.toLocaleString()}명</b></div>
-          <div className="summary-card">워크인 인원<br /><b>{워크인인원.toLocaleString()}명</b></div>
-          <div className="summary-card">총 방문 인원<br /><b>{총방문인원.toLocaleString()}명</b></div>
-          <div className="summary-card">회전율<br /><b>{회전율}</b></div>
-          <div className="summary-card">채널 유입<br /><b>{채널유입합.toLocaleString()}명</b></div>
-        </div>
-        <div style={{ display: 'flex', gap: 24, marginBottom: 24 }}>
-          <div style={{ flex: 2, background: '#fff', borderRadius: 12, minHeight: 180, boxShadow: '0 2px 12px rgba(30,34,40,0.06)', padding: 18 }}>
-            <b>방문 인원 추이</b>
-            <BarChartCustom data={grouped.map(g => g.rows.reduce((sum, row) => sum + parseInt(row['예약인원수'] as string || '0', 10) + parseInt(row['워크인인원수'] as string || '0', 10), 0))} labels={grouped.map(g => g.period)} />
+        </section>
+      )}
+      {activeTab === 'person' && (
+        <section>
+          <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 18, color: '#2d8cff', letterSpacing: 0.5 }}>방문 인원 및 유입 분석</h2>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 18, marginBottom: 24 }}>
+            <div className="summary-card">예약 인원<br /><b>{예약인원.toLocaleString()}명</b></div>
+            <div className="summary-card">워크인 인원<br /><b>{워크인인원.toLocaleString()}명</b></div>
+            <div className="summary-card">총 방문 인원<br /><b>{총방문인원.toLocaleString()}명</b></div>
+            <div className="summary-card">회전율<br /><b>{회전율}</b></div>
+            <div className="summary-card">채널 유입<br /><b>{채널유입합.toLocaleString()}명</b></div>
           </div>
-          <div style={{ flex: 1, background: '#fff', borderRadius: 12, minHeight: 180, boxShadow: '0 2px 12px rgba(30,34,40,0.06)', padding: 18, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-            <b>채널별 유입</b>
-            <PieChart data={채널유입} />
+          <div style={{ display: 'flex', gap: 24, marginBottom: 24 }}>
+            <div style={{ flex: 2, background: '#fff', borderRadius: 12, minHeight: 180, boxShadow: '0 2px 12px rgba(30,34,40,0.06)', padding: 18 }}>
+              <b>방문 인원 추이</b>
+              <BarChartCustom data={grouped.map(g => g.rows.reduce((sum, row) => sum + parseInt(row['예약인원수'] as string || '0', 10) + parseInt(row['워크인인원수'] as string || '0', 10), 0))} labels={grouped.map(g => g.period)} />
+            </div>
+            <div style={{ flex: 1, background: '#fff', borderRadius: 12, minHeight: 180, boxShadow: '0 2px 12px rgba(30,34,40,0.06)', padding: 18, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+              <b>채널별 유입</b>
+              <PieChart data={채널유입} />
+            </div>
           </div>
-        </div>
-        <div style={{ background: '#fff', borderRadius: 12, minHeight: 120, boxShadow: '0 2px 12px rgba(30,34,40,0.06)', padding: 18 }}>
-          연령대별 매출/고객수 표
-        </div>
-      </section>
-
-      {/* C) 상품 수 */}
-      <section>
-        <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 18 }}>C. 상품 수</h2>
-        <div style={{ display: 'flex', gap: 24, marginBottom: 24 }}>
-          <div style={{ flex: 2, background: '#fff', borderRadius: 12, minHeight: 180, boxShadow: '0 2px 12px rgba(30,34,40,0.06)', padding: 18 }}>
-            <b>상품별 판매 순위</b>
-            <BarChartProduct data={productRank.map(p => p.판매수)} labels={productRank.map(p => p.label)} />
+          <div style={{ background: '#fff', borderRadius: 12, minHeight: 120, boxShadow: '0 2px 12px rgba(30,34,40,0.06)', padding: 18 }}>
+            <b>연령대별 매출/고객수</b><br />
+            (데이터 입력 시 자동 집계)
           </div>
-          <div style={{ flex: 3, background: '#fff', borderRadius: 12, minHeight: 180, boxShadow: '0 2px 12px rgba(30,34,40,0.06)', padding: 18 }}>
-            <b>상품별 판매량/매출</b>
-            <table style={{ width: '100%', marginTop: 12, fontSize: 15 }}>
-              <thead>
-                <tr style={{ color: '#7b8aaf', fontWeight: 700 }}>
-                  <th>상품</th>
-                  <th>판매수</th>
-                  <th>매출</th>
-                </tr>
-              </thead>
-              <tbody>
-                {productRank.map(p => (
-                  <tr key={p.label}>
-                    <td>{p.label}</td>
-                    <td>{p.판매수.toLocaleString()}개</td>
-                    <td>{p.매출.toLocaleString()}원</td>
+        </section>
+      )}
+      {activeTab === 'product' && (
+        <section>
+          <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 18, color: '#2d8cff', letterSpacing: 0.5 }}>상품별 판매 및 매출 분석</h2>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 18, marginBottom: 24 }}>
+            {productRank.map(p => (
+              <div className="summary-card" key={p.label}>{p.label}<br /><b>{p.판매수.toLocaleString()}개 / {p.매출.toLocaleString()}원</b></div>
+            ))}
+          </div>
+          <div style={{ display: 'flex', gap: 24 }}>
+            <div style={{ flex: 2, background: '#fff', borderRadius: 12, minHeight: 180, boxShadow: '0 2px 12px rgba(30,34,40,0.06)', padding: 18 }}>
+              <b>상품별 판매 순위</b>
+              <BarChartProduct data={productRank.map(p => p.판매수)} labels={productRank.map(p => p.label)} />
+            </div>
+            <div style={{ flex: 3, background: '#fff', borderRadius: 12, minHeight: 180, boxShadow: '0 2px 12px rgba(30,34,40,0.06)', padding: 18 }}>
+              <b>상품별 판매량/매출</b>
+              <table style={{ width: '100%', marginTop: 12, fontSize: 15 }}>
+                <thead>
+                  <tr style={{ color: '#7b8aaf', fontWeight: 700 }}>
+                    <th>상품</th>
+                    <th>판매수</th>
+                    <th>매출</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {productRank.map(p => (
+                    <tr key={p.label}>
+                      <td>{p.label}</td>
+                      <td>{p.판매수.toLocaleString()}개</td>
+                      <td>{p.매출.toLocaleString()}원</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
     </div>
   );
 };
