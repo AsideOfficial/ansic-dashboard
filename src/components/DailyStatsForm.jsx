@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { db } from '../firebase';
 import { doc, setDoc, getDoc, deleteDoc } from 'firebase/firestore';
 
@@ -84,6 +84,7 @@ export default function DailyStatsForm() {
   const [loadingType, setLoadingType] = useState(null); // null | 'fetch' | 'save' | 'delete'
   const [result, setResult] = useState(null);
   const [isEdit, setIsEdit] = useState(false);
+  const prevDateRef = useRef(form.date);
 
   // 날짜 변경 시 데이터 조회
   useEffect(() => {
@@ -101,11 +102,14 @@ export default function DailyStatsForm() {
           setForm({ ...initialState, date: form.date });
           setIsEdit(false);
         }
-        setLoadingType(null);
+        setLoadingType(null); // fetch가 끝나면 반드시 null로
       }
     }
-    fetchData();
-    return () => { ignore = true; };
+    // 날짜가 실제로 바뀔 때만 fetch
+    if (prevDateRef.current !== form.date) {
+      fetchData();
+      prevDateRef.current = form.date;
+    }
     // eslint-disable-next-line
   }, [form.date]);
 
@@ -162,7 +166,7 @@ export default function DailyStatsForm() {
   return (
     <form onSubmit={handleSubmit} className="max-w-xl mx-auto p-4 bg-white rounded shadow flex flex-col gap-2">
       <label className="font-bold">날짜
-        <input type="date" name="date" value={form.date} onChange={handleChange} className="ml-2 border rounded px-2 py-1" required disabled={isFetching || isSaving || isDeleting} />
+        <input type="date" name="date" value={form.date} onChange={handleChange} className="ml-2 border rounded px-2 py-1" required disabled={isSaving || isDeleting} />
       </label>
       {fieldLabels.map(({ key, label }) => (
         <label key={key} className="flex justify-between items-center">
@@ -176,7 +180,7 @@ export default function DailyStatsForm() {
             min={0}
             step={1}
             required
-            disabled={isFetching || isSaving || isDeleting}
+            disabled={isSaving || isDeleting}
           />
         </label>
       ))}
