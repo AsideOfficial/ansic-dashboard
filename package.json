@@ -26,7 +26,7 @@
     "web-vitals": "^2.1.4",
     "xlsx": "^0.18.5"
   },
-  "homepage": "https://asideofficial.github.io/clinic-plate",
+  "homepage": "https://asideofficial.github.io/ansic-dashboard",
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
