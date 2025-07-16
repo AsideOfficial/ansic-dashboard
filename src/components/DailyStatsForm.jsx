@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, deleteDoc } from 'firebase/firestore';
 
 const initialState = {
   date: new Date().toISOString().slice(0, 10),
@@ -69,13 +69,50 @@ const fieldLabels = [
   { key: 'foodconSales', label: '푸드콘 사용금액' },
 ];
 
+function validate(form) {
+  for (const { key, label } of fieldLabels) {
+    if (form[key] < 0 || isNaN(form[key])) {
+      return `${label}은(는) 0 이상의 숫자여야 합니다.`;
+    }
+  }
+  if (!form.date) return '날짜를 선택해 주세요.';
+  return null;
+}
+
 export default function DailyStatsForm() {
   const [form, setForm] = useState(initialState);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
+  const [isEdit, setIsEdit] = useState(false);
+
+  // 날짜 변경 시 데이터 조회
+  useEffect(() => {
+    let ignore = false;
+    async function fetchData() {
+      setLoading(true);
+      setResult(null);
+      const ref = doc(db, 'dailyStats', form.date);
+      const snap = await getDoc(ref);
+      if (!ignore) {
+        if (snap.exists()) {
+          setForm(snap.data());
+          setIsEdit(true);
+        } else {
+          setForm({ ...initialState, date: form.date });
+          setIsEdit(false);
+        }
+        setLoading(false);
+      }
+    }
+    fetchData();
+    return () => { ignore = true; };
+    // eslint-disable-next-line
+  }, [form.date]);
 
   const handleChange = (e) => {
     const { name, value, type } = e.target;
+    // 숫자 입력값 검증: 0 이상, 숫자만
+    if (type === 'number' && (value === '' || isNaN(Number(value)) || Number(value) < 0)) return;
     setForm((prev) => ({
       ...prev,
       [name]: type === 'number' ? Number(value) : value,
@@ -84,13 +121,35 @@ export default function DailyStatsForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const error = validate(form);
+    if (error) {
+      setResult(error);
+      return;
+    }
     setLoading(true);
     setResult(null);
     try {
       await setDoc(doc(db, 'dailyStats', form.date), form);
-      setResult('저장 성공!');
+      setResult(isEdit ? '수정 성공!' : '저장 성공!');
+      setIsEdit(true);
     } catch (err) {
       setResult('저장 실패: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm('정말 삭제하시겠습니까?')) return;
+    setLoading(true);
+    setResult(null);
+    try {
+      await deleteDoc(doc(db, 'dailyStats', form.date));
+      setForm({ ...initialState, date: form.date });
+      setIsEdit(false);
+      setResult('삭제 성공!');
+    } catch (err) {
+      setResult('삭제 실패: ' + err.message);
     } finally {
       setLoading(false);
     }
@@ -111,12 +170,21 @@ export default function DailyStatsForm() {
             onChange={handleChange}
             className="border rounded px-2 py-1 w-32 text-right"
             min={0}
+            step={1}
+            required
           />
         </label>
       ))}
-      <button type="submit" disabled={loading} className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-        {loading ? '저장 중...' : '저장하기'}
-      </button>
+      <div className="flex gap-2 mt-4">
+        <button type="submit" disabled={loading} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 flex-1">
+          {isEdit ? (loading ? '수정 중...' : '수정하기') : (loading ? '저장 중...' : '저장하기')}
+        </button>
+        {isEdit && (
+          <button type="button" onClick={handleDelete} disabled={loading} className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 flex-1">
+            삭제하기
+          </button>
+        )}
+      </div>
       {result && <div className="mt-2 text-center font-semibold">{result}</div>}
     </form>
   );
