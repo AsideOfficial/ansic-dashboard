@@ -8,17 +8,19 @@ import Report from './pages/Report';
 
 function App() {
   const [activePage, setActivePage] = useState('dashboard');
+  // 상단 탭 상태(매출/인원/상품 수)
+  const [activeTab, setActiveTab] = useState<'sales' | 'person' | 'product'>('sales');
 
   const renderPage = () => {
     switch (activePage) {
       case 'dashboard':
-        return <Dashboard />;
+        return <Dashboard activeTab={activeTab} onTabChange={setActiveTab} />;
       case 'employee':
         return <EmployeeInput />;
       case 'report':
         return <Report />;
       default:
-        return <Dashboard />;
+        return <Dashboard activeTab={activeTab} onTabChange={setActiveTab} />;
     }
   };
 
@@ -26,7 +28,7 @@ function App() {
     <div className="app-layout">
       <Sidebar activePage={activePage} onPageChange={setActivePage} />
       <div className="main-content">
-        <Topbar activePage={activePage} />
+        <Topbar activeTab={activeTab} onTabChange={setActiveTab} />
         <div className="page-content">
           {renderPage()}
         </div>

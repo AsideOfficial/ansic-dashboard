@@ -37,12 +37,15 @@ const TABS = [
   { key: 'product', label: '상품 수' },
 ];
 
-const Dashboard: React.FC = () => {
+type DashboardProps = {
+  activeTab: 'sales' | 'person' | 'product';
+  onTabChange: (tab: 'sales' | 'person' | 'product') => void;
+};
+const Dashboard: React.FC<DashboardProps> = ({ activeTab, onTabChange }) => {
   // 기간 필터 상태
   const [period, setPeriod] = useState<'year' | 'month' | 'week' | 'day'>('month');
   const [employeeInputs, setEmployeeInputs] = useState<SalesRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'sales' | 'person' | 'product'>('sales');
 
   // 데이터 fetch
   useEffect(() => {
@@ -208,12 +211,12 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="dashboard" style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 0' }}>
-      {/* 상단 탭 */}
+      {/* 상단 탭 (App에서 상태 관리) */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 32, justifyContent: 'center' }}>
         {TABS.map(tab => (
           <button
             key={tab.key}
-            onClick={() => setActiveTab(tab.key as any)}
+            onClick={() => onTabChange(tab.key as any)}
             style={{
               padding: '12px 36px',
               borderRadius: 8,
