@@ -81,7 +81,7 @@ function validate(form) {
 
 export default function DailyStatsForm() {
   const [form, setForm] = useState(initialState);
-  const [loading, setLoading] = useState(false);
+  const [loadingType, setLoadingType] = useState(null); // null | 'fetch' | 'save' | 'delete'
   const [result, setResult] = useState(null);
   const [isEdit, setIsEdit] = useState(false);
 
@@ -89,7 +89,7 @@ export default function DailyStatsForm() {
   useEffect(() => {
     let ignore = false;
     async function fetchData() {
-      setLoading(true);
+      setLoadingType('fetch');
       setResult(null);
       const ref = doc(db, 'dailyStats', form.date);
       const snap = await getDoc(ref);
@@ -101,7 +101,7 @@ export default function DailyStatsForm() {
           setForm({ ...initialState, date: form.date });
           setIsEdit(false);
         }
-        setLoading(false);
+        setLoadingType(null);
       }
     }
     fetchData();
@@ -126,7 +126,7 @@ export default function DailyStatsForm() {
       setResult(error);
       return;
     }
-    setLoading(true);
+    setLoadingType('save');
     setResult(null);
     try {
       await setDoc(doc(db, 'dailyStats', form.date), form);
@@ -135,13 +135,13 @@ export default function DailyStatsForm() {
     } catch (err) {
       setResult('저장 실패: ' + err.message);
     } finally {
-      setLoading(false);
+      setLoadingType(null);
     }
   };
 
   const handleDelete = async () => {
     if (!window.confirm('정말 삭제하시겠습니까?')) return;
-    setLoading(true);
+    setLoadingType('delete');
     setResult(null);
     try {
       await deleteDoc(doc(db, 'dailyStats', form.date));
@@ -151,14 +151,18 @@ export default function DailyStatsForm() {
     } catch (err) {
       setResult('삭제 실패: ' + err.message);
     } finally {
-      setLoading(false);
+      setLoadingType(null);
     }
   };
+
+  const isFetching = loadingType === 'fetch';
+  const isSaving = loadingType === 'save';
+  const isDeleting = loadingType === 'delete';
 
   return (
     <form onSubmit={handleSubmit} className="max-w-xl mx-auto p-4 bg-white rounded shadow flex flex-col gap-2">
       <label className="font-bold">날짜
-        <input type="date" name="date" value={form.date} onChange={handleChange} className="ml-2 border rounded px-2 py-1" required />
+        <input type="date" name="date" value={form.date} onChange={handleChange} className="ml-2 border rounded px-2 py-1" required disabled={isFetching || isSaving || isDeleting} />
       </label>
       {fieldLabels.map(({ key, label }) => (
         <label key={key} className="flex justify-between items-center">
@@ -172,16 +176,19 @@ export default function DailyStatsForm() {
             min={0}
             step={1}
             required
+            disabled={isFetching || isSaving || isDeleting}
           />
         </label>
       ))}
       <div className="flex gap-2 mt-4">
-        <button type="submit" disabled={loading} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 flex-1">
-          {isEdit ? (loading ? '수정 중...' : '수정하기') : (loading ? '저장 중...' : '저장하기')}
+        <button type="submit" disabled={isFetching || isSaving || isDeleting} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 flex-1">
+          {isEdit
+            ? (isSaving ? '수정 중...' : '수정하기')
+            : (isSaving ? '저장 중...' : '저장하기')}
         </button>
         {isEdit && (
-          <button type="button" onClick={handleDelete} disabled={loading} className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 flex-1">
-            삭제하기
+          <button type="button" onClick={handleDelete} disabled={isFetching || isSaving || isDeleting} className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 flex-1">
+            {isDeleting ? '삭제 중...' : '삭제하기'}
           </button>
         )}
       </div>
