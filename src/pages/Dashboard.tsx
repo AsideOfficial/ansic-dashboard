@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { db } from '../firebase';
 import { collection, getDocs } from 'firebase/firestore';
+import SummaryCard from '../components/SummaryCard';
 
 // 매출 관련 필드
 const salesFields = [
@@ -215,28 +216,27 @@ const Dashboard: React.FC<DashboardProps> = ({ activeTab, onTabChange }) => {
       {activeTab === 'sales' && (
         <section>
           <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 18, color: '#2d8cff', letterSpacing: 0.5 }}>매출 현황 및 분석</h2>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 18, marginBottom: 24 }}>
-            <div className="summary-card">총 매출<br /><b>{latestFull ? (latestFull.total as number).toLocaleString() + '원' : '-'}</b></div>
-            {salesFieldsFull.map(f => (
-              <div className="summary-card" key={f.key}>{f.label}<br /><b>{latestFull ? (latestFull[f.key] as number).toLocaleString() + '원' : '-'}</b></div>
-            ))}
-            <div className="summary-card">순이익<br /><b>{latestFull ? 순이익.toLocaleString() + '원' : '-'}</b></div>
-            <div className="summary-card">매출 목표/달성률<br /><b>{목표.toLocaleString()}원 / {latestFull ? (((latestFull.total as number) / 목표) * 100).toFixed(1) : '-'}%</b></div>
-            <div className="summary-card">미달성<br /><b>{latestFull ? Math.max(0, 목표 - (latestFull.total as number)).toLocaleString() + '원' : '-'}</b></div>
+          {/* 카드 영역: 핵심 지표만 */}
+          <div className="summary-grid" style={{ marginBottom: 32 }}>
+            <SummaryCard title="총 매출" value={latestFull ? (latestFull.total as number).toLocaleString() + '원' : '-'} />
+            <SummaryCard title="순이익" value={latestFull ? 순이익.toLocaleString() + '원' : '-'} />
+            <SummaryCard title="매출 목표/달성률" value={목표.toLocaleString() + '원 / ' + (latestFull ? (((latestFull.total as number) / 목표) * 100).toFixed(1) : '-')} />
+            <SummaryCard title="미달성" value={latestFull ? Math.max(0, 목표 - (latestFull.total as number)).toLocaleString() + '원' : '-'} />
           </div>
+          {/* 그래프 영역: 세부 항목/추이 등 */}
           <div style={{ display: 'flex', gap: 24, marginBottom: 24 }}>
             <div style={{ flex: 2, background: '#fff', borderRadius: 12, minHeight: 180, boxShadow: '0 2px 12px rgba(30,34,40,0.06)', padding: 18 }}>
-              <b>총 매출</b>
+              <b>총 매출 추이</b>
               <BarChartCustom data={totalSalesByPeriodFull.map(d => d.total as number)} labels={totalSalesByPeriodFull.map(d => d.period)} />
             </div>
             <div style={{ flex: 3, background: '#fff', borderRadius: 12, minHeight: 180, boxShadow: '0 2px 12px rgba(30,34,40,0.06)', padding: 18 }}>
-              <b>매출 세부 항목</b>
+              <b>매출 세부 항목 비율</b>
               <StackedBarChart data={totalSalesByPeriodFull} fields={salesFieldsFull} />
             </div>
           </div>
           <div style={{ display: 'flex', gap: 24 }}>
             <div style={{ flex: 2, background: '#fff', borderRadius: 12, minHeight: 180, boxShadow: '0 2px 12px rgba(30,34,40,0.06)', padding: 18 }}>
-              <b>순이익</b>
+              <b>순이익 추이</b>
               <LineChartProfit data={순이익Arr} labels={totalSalesByPeriodFull.map(d => d.period)} />
             </div>
             <div style={{ flex: 3, background: '#fff', borderRadius: 12, minHeight: 180, boxShadow: '0 2px 12px rgba(30,34,40,0.06)', padding: 18 }}>
