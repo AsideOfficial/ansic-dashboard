@@ -216,54 +216,64 @@ const Dashboard: React.FC<DashboardProps> = ({ activeTab, onTabChange }) => {
       {activeTab === 'sales' && (
         <section>
           <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 18, color: '#2d8cff', letterSpacing: 0.5 }}>매출 현황 및 분석</h2>
-          {/* 카드 영역: 모든 지표 */}
-          <div className="summary-grid" style={{ marginBottom: 32 }}>
-            <SummaryCard title="총 매출" value={latestFull ? (latestFull.total as number).toLocaleString() + '원' : '-'} />
-            {salesFieldsFull.map(f => (
-              <SummaryCard key={f.key} title={f.label} value={latestFull ? (latestFull[f.key] as number).toLocaleString() + '원' : '-'} />
-            ))}
-            <SummaryCard title="순이익" value={latestFull ? 순이익.toLocaleString() + '원' : '-'} />
-            <SummaryCard title="매출 목표/달성률" value={목표.toLocaleString() + '원 / ' + (latestFull ? (((latestFull.total as number) / 목표) * 100).toFixed(1) : '-')} />
-            <SummaryCard title="미달성" value={latestFull ? Math.max(0, 목표 - (latestFull.total as number)).toLocaleString() + '원' : '-'} />
+          {/* 1. 상단 KPI 카드 + 기간 필터 */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+            <div style={{ display: 'flex', gap: 18 }}>
+              <SummaryCard title="총 매출" value={latestFull ? (latestFull.total as number).toLocaleString() + '원' : '-'} />
+              <SummaryCard title="순이익" value={latestFull ? 순이익.toLocaleString() + '원' : '-'} />
+              <SummaryCard title="목표달성률" value={latestFull ? (((latestFull.total as number) / 목표) * 100).toFixed(1) + '%' : '-'} />
+              <SummaryCard title="배달매출" value={latestFull ? (latestFull['배달매출전'] as number).toLocaleString() + '원' : '-'} />
+            </div>
+            {/* 기간 필터 UI */}
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <span style={{ color: '#7b8aaf', fontWeight: 600, fontSize: 15, marginRight: 4 }}>기간</span>
+              {['year', 'month', 'week', 'day'].map(p => (
+                <button
+                  key={p}
+                  style={{
+                    background: period === p ? '#2d8cff' : '#f4f8ff',
+                    color: period === p ? '#fff' : '#2d8cff',
+                    border: 'none',
+                    borderRadius: 8,
+                    padding: '7px 18px',
+                    fontWeight: 700,
+                    fontSize: 15,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                  }}
+                  onClick={() => setPeriod(p as any)}
+                >
+                  {p === 'year' ? '연도별' : p === 'month' ? '월별' : p === 'week' ? '주별' : '일별'}
+                </button>
+              ))}
+            </div>
           </div>
-          {/* 그래프/표 영역 */}
+          {/* 2. 본문 영역: 좌측 Pie, 메인 Line, 하단 Bar/테이블 (구조만) */}
           <div style={{ display: 'flex', gap: 24, marginBottom: 24 }}>
-            <div style={{ flex: 2, background: '#fff', borderRadius: 12, minHeight: 180, boxShadow: '0 2px 12px rgba(30,34,40,0.06)', padding: 18 }}>
-              <b>총 매출 추이</b>
-              <BarChartCustom data={totalSalesByPeriodFull.map(d => d.total as number)} labels={totalSalesByPeriodFull.map(d => d.period)} />
+            {/* 좌측 Pie chart 자리 */}
+            <div style={{ flex: 1, minWidth: 260, background: '#fff', borderRadius: 12, boxShadow: '0 2px 12px rgba(30,34,40,0.06)', padding: 18, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+              <b>채널별 매출 구성</b>
+              {/* PieChart 자리 */}
+              <div style={{ marginTop: 12, width: 180, height: 180, background: '#f8fafc', borderRadius: '50%' }} />
             </div>
-            <div style={{ flex: 3, background: '#fff', borderRadius: 12, minHeight: 180, boxShadow: '0 2px 12px rgba(30,34,40,0.06)', padding: 18 }}>
-              <b>매출 세부 항목 비율</b>
-              <StackedBarChart data={totalSalesByPeriodFull} fields={salesFieldsFull} />
+            {/* 메인 Line chart 자리 */}
+            <div style={{ flex: 3, background: '#fff', borderRadius: 12, boxShadow: '0 2px 12px rgba(30,34,40,0.06)', padding: 18 }}>
+              <b>기간별 매출/순이익 추이</b>
+              {/* LineChart 자리 */}
+              <div style={{ marginTop: 12, width: '100%', height: 220, background: '#f8fafc', borderRadius: 12 }} />
             </div>
           </div>
+          {/* 하단 목표 vs 실적 Bar, 카테고리별 매출 테이블 자리 */}
           <div style={{ display: 'flex', gap: 24 }}>
-            <div style={{ flex: 2, background: '#fff', borderRadius: 12, minHeight: 180, boxShadow: '0 2px 12px rgba(30,34,40,0.06)', padding: 18 }}>
-              <b>순이익 추이</b>
-              <LineChartProfit data={순이익Arr} labels={totalSalesByPeriodFull.map(d => d.period)} />
+            <div style={{ flex: 2, background: '#fff', borderRadius: 12, boxShadow: '0 2px 12px rgba(30,34,40,0.06)', padding: 18 }}>
+              <b>매출 목표 vs 실적</b>
+              {/* BarChart 자리 */}
+              <div style={{ marginTop: 12, width: '100%', height: 120, background: '#f8fafc', borderRadius: 12 }} />
             </div>
-            <div style={{ flex: 3, background: '#fff', borderRadius: 12, minHeight: 180, boxShadow: '0 2px 12px rgba(30,34,40,0.06)', padding: 18 }}>
-              <b>매출 목표/실적/미달성</b>
-              <table style={{ width: '100%', marginTop: 12, fontSize: 15 }}>
-                <thead>
-                  <tr style={{ color: '#7b8aaf', fontWeight: 700 }}>
-                    <th>기간</th>
-                    <th>실적</th>
-                    <th>목표</th>
-                    <th>미달성</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {totalSalesByPeriodFull.map(d => (
-                    <tr key={d.period}>
-                      <td>{d.period}</td>
-                      <td>{(d.total as number).toLocaleString()}원</td>
-                      <td>{목표.toLocaleString()}원</td>
-                      <td>{Math.max(0, 목표 - (d.total as number)).toLocaleString()}원</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div style={{ flex: 3, background: '#fff', borderRadius: 12, boxShadow: '0 2px 12px rgba(30,34,40,0.06)', padding: 18 }}>
+              <b>카테고리별 매출 리스트</b>
+              {/* 매출 테이블 자리 */}
+              <div style={{ marginTop: 12, width: '100%', minHeight: 120, background: '#f8fafc', borderRadius: 12 }} />
             </div>
           </div>
         </section>
