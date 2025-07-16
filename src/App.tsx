@@ -28,7 +28,7 @@ function App() {
     <div className="app-layout">
       <Sidebar activePage={activePage} onPageChange={setActivePage} />
       <div className="main-content">
-        <Topbar activeTab={activeTab} onTabChange={setActiveTab} />
+        <Topbar activeTab={activeTab} onTabChange={setActiveTab} activePage={activePage} />
         <div className="page-content">
           {renderPage()}
         </div>
