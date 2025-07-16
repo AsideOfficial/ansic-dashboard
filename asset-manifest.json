@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/clinic-plate/static/css/main.ee36688c.css",
+    "main.js": "/clinic-plate/static/js/main.13041ab6.js",
+    "static/js/453.116cc4d3.chunk.js": "/clinic-plate/static/js/453.116cc4d3.chunk.js",
+    "index.html": "/clinic-plate/index.html",
+    "main.ee36688c.css.map": "/clinic-plate/static/css/main.ee36688c.css.map",
+    "main.13041ab6.js.map": "/clinic-plate/static/js/main.13041ab6.js.map",
+    "453.116cc4d3.chunk.js.map": "/clinic-plate/static/js/453.116cc4d3.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.ee36688c.css",
+    "static/js/main.13041ab6.js"
+  ]
+}
