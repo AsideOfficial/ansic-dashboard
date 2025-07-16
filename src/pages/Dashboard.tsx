@@ -214,7 +214,7 @@ const Dashboard: React.FC = () => {
 
       {/* A) 매출 */}
       <section>
-        <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 18 }}>A. 매출</h2>
+        <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 18, color: '#2d8cff', letterSpacing: 0.5 }}>매출 현황 및 분석</h2>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 18, marginBottom: 24 }}>
           <div className="summary-card">총 매출<br /><b>{latestFull ? (latestFull.total as number).toLocaleString() + '원' : '-'}</b></div>
           {salesFieldsFull.map(f => (
