@@ -216,14 +216,17 @@ const Dashboard: React.FC<DashboardProps> = ({ activeTab, onTabChange }) => {
       {activeTab === 'sales' && (
         <section>
           <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 18, color: '#2d8cff', letterSpacing: 0.5 }}>매출 현황 및 분석</h2>
-          {/* 카드 영역: 핵심 지표만 */}
+          {/* 카드 영역: 모든 지표 */}
           <div className="summary-grid" style={{ marginBottom: 32 }}>
             <SummaryCard title="총 매출" value={latestFull ? (latestFull.total as number).toLocaleString() + '원' : '-'} />
+            {salesFieldsFull.map(f => (
+              <SummaryCard key={f.key} title={f.label} value={latestFull ? (latestFull[f.key] as number).toLocaleString() + '원' : '-'} />
+            ))}
             <SummaryCard title="순이익" value={latestFull ? 순이익.toLocaleString() + '원' : '-'} />
             <SummaryCard title="매출 목표/달성률" value={목표.toLocaleString() + '원 / ' + (latestFull ? (((latestFull.total as number) / 목표) * 100).toFixed(1) : '-')} />
             <SummaryCard title="미달성" value={latestFull ? Math.max(0, 목표 - (latestFull.total as number)).toLocaleString() + '원' : '-'} />
           </div>
-          {/* 그래프 영역: 세부 항목/추이 등 */}
+          {/* 그래프/표 영역 */}
           <div style={{ display: 'flex', gap: 24, marginBottom: 24 }}>
             <div style={{ flex: 2, background: '#fff', borderRadius: 12, minHeight: 180, boxShadow: '0 2px 12px rgba(30,34,40,0.06)', padding: 18 }}>
               <b>총 매출 추이</b>
