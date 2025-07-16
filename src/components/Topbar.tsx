@@ -9,7 +9,7 @@ type TopbarProps = {
 const tabList = [
   { key: 'sales', label: '매출' },
   { key: 'person', label: '인원' },
-  { key: 'product', label: '상품 수' },
+  { key: 'product', label: '상품' },
 ];
 
 const pageTitles: Record<string, string> = {
@@ -21,7 +21,7 @@ const pageTitles: Record<string, string> = {
 const Topbar: React.FC<TopbarProps> = ({ activeTab, onTabChange, activePage }) => {
   return (
     <header className="topbar" style={{ width: '100%', background: '#fff', borderBottom: '1px solid #e0e6ef', minHeight: 68 }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'normal', gap: 36, height: 68, padding: '0 40px' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 36, height: 68, padding: '0 40px' }}>
         <div className="topbar-title" style={{ fontSize: '1.35rem', fontWeight: 700, color: '#222', letterSpacing: 0.5, whiteSpace: 'nowrap', flex: '0 0 auto', textAlign: 'left' }}>{pageTitles[activePage] || ''}</div>
         {activePage === 'dashboard' && (
           <nav style={{ display: 'flex', gap: 24, flex: '0 0 auto', marginLeft: 'auto' }}>
