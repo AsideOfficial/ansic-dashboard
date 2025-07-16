@@ -100,6 +100,25 @@ const Dashboard: React.FC = () => {
   const 순이익 = latest ? Math.round((latest.total as number) * 0.25) : 0; // 예시: 25% 마진
   const 미달성 = latest ? Math.max(0, 목표 - (latest.total as number)) : 0;
 
+  // 인원 집계
+  const personFields = [
+    { key: '예약인원수', label: '예약 인원' },
+    { key: '워크인인원수', label: '워크인 인원' },
+  ];
+  const channelFields = [
+    { key: '유선전화유입', label: '유선전화' },
+    { key: '캐치테이블유입', label: '캐치테이블' },
+    { key: '네이버예약유입', label: '네이버예약' },
+  ];
+  const latestPerson = grouped.length > 0 ? grouped[grouped.length - 1].rows : [];
+  const sumPerson = (key: string) => latestPerson.reduce((sum, row) => sum + parseInt(row[key] as string || '0', 10), 0);
+  const 예약인원 = sumPerson('예약인원수');
+  const 워크인인원 = sumPerson('워크인인원수');
+  const 총방문인원 = 예약인원 + 워크인인원;
+  const 회전율 = (총방문인원 / 30).toFixed(2);
+  const 채널유입 = channelFields.map(f => ({ label: f.label, value: sumPerson(f.key) }));
+  const 채널유입합 = 채널유입.reduce((sum, d) => sum + d.value, 0);
+
   return (
     <div className="dashboard" style={{ display: 'flex', flexDirection: 'column', gap: 40 }}>
       {/* 날짜/기간 필터 */}
@@ -162,18 +181,20 @@ const Dashboard: React.FC = () => {
       <section>
         <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 18 }}>B. 인원</h2>
         <div style={{ display: 'flex', gap: 18, marginBottom: 24 }}>
-          <div className="summary-card">예약 인원</div>
-          <div className="summary-card">워크인 인원</div>
-          <div className="summary-card">총 방문 인원</div>
-          <div className="summary-card">회전율</div>
-          <div className="summary-card">채널 유입</div>
+          <div className="summary-card">예약 인원<br /><b>{예약인원.toLocaleString()}명</b></div>
+          <div className="summary-card">워크인 인원<br /><b>{워크인인원.toLocaleString()}명</b></div>
+          <div className="summary-card">총 방문 인원<br /><b>{총방문인원.toLocaleString()}명</b></div>
+          <div className="summary-card">회전율<br /><b>{회전율}</b></div>
+          <div className="summary-card">채널 유입<br /><b>{채널유입합.toLocaleString()}명</b></div>
         </div>
         <div style={{ display: 'flex', gap: 24, marginBottom: 24 }}>
           <div style={{ flex: 2, background: '#fff', borderRadius: 12, minHeight: 180, boxShadow: '0 2px 12px rgba(30,34,40,0.06)', padding: 18 }}>
-            인원 추이 Bar/Line Chart
+            <b>방문 인원 추이</b>
+            <BarChartCustom data={grouped.map(g => g.rows.reduce((sum, row) => sum + parseInt(row['예약인원수'] as string || '0', 10) + parseInt(row['워크인인원수'] as string || '0', 10), 0))} labels={grouped.map(g => g.period)} />
           </div>
-          <div style={{ flex: 1, background: '#fff', borderRadius: 12, minHeight: 180, boxShadow: '0 2px 12px rgba(30,34,40,0.06)', padding: 18 }}>
-            채널별 유입 PieChart
+          <div style={{ flex: 1, background: '#fff', borderRadius: 12, minHeight: 180, boxShadow: '0 2px 12px rgba(30,34,40,0.06)', padding: 18, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <b>채널별 유입</b>
+            <PieChart data={채널유입} />
           </div>
         </div>
         <div style={{ background: '#fff', borderRadius: 12, minHeight: 120, boxShadow: '0 2px 12px rgba(30,34,40,0.06)', padding: 18 }}>
@@ -243,6 +264,47 @@ const StackedBarChart: React.FC<{ data: TotalSalesByPeriod[]; fields: { key: str
       })}
       {data.map((row, i) => (
         <text key={row.period} x={i * 40 + 42} y={115} fontSize={11} textAnchor="middle" fill="#7b8aaf">{row.period}</text>
+      ))}
+    </svg>
+  );
+};
+
+// PieChart for channel
+const PieChart: React.FC<{ data: { label: string; value: number }[] }> = ({ data }) => {
+  const total = data.reduce((sum, d) => sum + d.value, 0) || 1;
+  let acc = 0;
+  return (
+    <svg width="120" height="120" viewBox="0 0 120 120">
+      {data.map((d, i) => {
+        const start = acc;
+        const angle = (d.value / total) * 360;
+        acc += angle;
+        const x1 = 60 + 50 * Math.cos((Math.PI * (start - 90)) / 180);
+        const y1 = 60 + 50 * Math.sin((Math.PI * (start - 90)) / 180);
+        const x2 = 60 + 50 * Math.cos((Math.PI * (start + angle - 90)) / 180);
+        const y2 = 60 + 50 * Math.sin((Math.PI * (start + angle - 90)) / 180);
+        const large = angle > 180 ? 1 : 0;
+        return (
+          <path
+            key={d.label}
+            d={`M60,60 L${x1},${y1} A50,50 0 ${large} 1 ${x2},${y2} Z`}
+            fill={colors[i % colors.length]}
+            stroke="#fff"
+            strokeWidth={2}
+          />
+        );
+      })}
+      {data.map((d, i) => (
+        <text
+          key={d.label}
+          x={60 + 60 * Math.cos((Math.PI * ((acc = acc - (d.value / total) * 360) + (d.value / total) * 180 - 90)) / 180)}
+          y={60 + 60 * Math.sin((Math.PI * (acc + (d.value / total) * 180 - 90)) / 180)}
+          fontSize={11}
+          textAnchor="middle"
+          fill="#7b8aaf"
+        >
+          {d.label}
+        </text>
       ))}
     </svg>
   );
